@@ -41,10 +41,16 @@ ui <- fluidPage(
     sidebarPanel(
       
       #Checkbox to select boroughs
-      checkboxGroupInput(inputId = "selected_borough",
+      radioButtons(inputId = "selected_borough",
                          label = "Search by borough",
                          choices = c("Q","K","M","S","B"),
-                         selected = "M")
+                         selected = "M"),
+      
+      selectInput(inputId = "selected_race",
+                         label = "Search by race",
+                         choices = c("BLACK","ASIAN / PACIFIC ISLANDER", "WHITE", 
+                                     "WHITE HISPANIC", "BLACK HISPANIC", 
+                                     "AMERICAN INDIAN/ALASKAN NATIVE"))
     ),
   
   mainPanel(
@@ -54,9 +60,9 @@ ui <- fluidPage(
       tabPanel("Data Table", br(), br(), uiOutput(outputId = "n"),br(), br(),DT::dataTableOutput("DataTable")),
       tabPanel("Donut Chart",br(), br(), plotlyOutput(outputId = "donut")),
       tabPanel("Barchart", br(), br(), plotlyOutput(outputId = "barchart"))
-      # tabPanel("Map", br(), br(), br(), leafletOutput("map", height = "100%", width = "100%"))
+      #tabPanel("Map", br(), br(), br(), leafletOutput("map", height = "100%", width = "100%"))
     )
-  )
+   )
   ) 
 )
 
@@ -65,7 +71,7 @@ server <- function(input, output, session){
   #Subsetting data based on the selection of boroughs
   arrest_data_subset <- reactive({
     req(input$selected_borough) # ensure availablity of value before proceeding
-    filter(arrest_data, arrest_boro %in% input$selected_borough)
+    filter(arrest_data, arrest_boro %in% input$selected_borough, perp_race %in% input$selected_race)
   })
   
   #Updating the size of the sample subset
