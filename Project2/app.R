@@ -52,7 +52,8 @@ ui <- fluidPage(
     tabsetPanel(
       
       tabPanel("Data Table", br(), br(), uiOutput(outputId = "n"),br(), br(),DT::dataTableOutput("DataTable")),
-      tabPanel("Donut Chart",br(), br(), plotlyOutput(outputId = "donut"))
+      tabPanel("Donut Chart",br(), br(), plotlyOutput(outputId = "donut")),
+      tabPanel("Barchart", br(), br(), plotOutput(outputId = "barchart"))
       # tabPanel("Map", br(), br(), br(), leafletOutput("map", height = "100%", width = "100%"))
     )
   )
@@ -83,27 +84,30 @@ server <- function(input, output, session){
                   rownames = FALSE)
   )
   
-  #Server logic for bar chart plotting the bar chart with gender
-  
+  #Server logic for donut chart
   output$donut <- renderPlotly({
     p <- arrest_data_subset() %>%
       group_by(age_group) %>%
       summarize(count = n()) %>%
       plot_ly(labels = ~age_group, values = ~count) %>%
       add_pie(hole = 0.6) %>%
-      layout(title = "Donut chart depicting percentage of cases by council district",  showlegend = T,
+      layout(title = "Distrubution of perpetrators by age group",  showlegend = T,
              xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
              yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
   })
   
+  #Server logic for barchart
+  #Convert to PLOTLY
+  output$barchart <- renderPlot({
+    p4 <- arrest_data_subset() %>%
+      group_by(age_group, perp_sex) %>%
+      summarize(count = n()) %>% 
+      ggplot(aes(x = age_group, y= count, fill = perp_sex)) + 
+      geom_bar(stat="identity") + xlab("Age Group") + ylab("Count")
+    p4
+  })
   
-  # #Rendering the map
-  # output$map <- renderLeaflet({
-  #   leaflet() %>%
-  #     addProviderTiles("OpenStreetMap.HOT") %>%
-  #     addCircleMarkers(data = arrest_data, lng = ~longitude, lat = ~latitude, radius = 1.5)
-  # })
-  # 
+   
 }
 
 shinyApp(ui = ui, server = server)
