@@ -53,7 +53,7 @@ ui <- fluidPage(
       
       tabPanel("Data Table", br(), br(), uiOutput(outputId = "n"),br(), br(),DT::dataTableOutput("DataTable")),
       tabPanel("Donut Chart",br(), br(), plotlyOutput(outputId = "donut")),
-      tabPanel("Barchart", br(), br(), plotOutput(outputId = "barchart"))
+      tabPanel("Barchart", br(), br(), plotlyOutput(outputId = "barchart"))
       # tabPanel("Map", br(), br(), br(), leafletOutput("map", height = "100%", width = "100%"))
     )
   )
@@ -98,12 +98,14 @@ server <- function(input, output, session){
   
   #Server logic for barchart
   #Convert to PLOTLY
-  output$barchart <- renderPlot({
-    p4 <- arrest_data_subset() %>%
+  output$barchart <- renderPlotly({
+    ggplotly(
+      p4 <- arrest_data_subset() %>%
       group_by(age_group, perp_sex) %>%
       summarize(count = n()) %>% 
       ggplot(aes(x = age_group, y= count, fill = perp_sex)) + 
       geom_bar(stat="identity") + xlab("Age Group") + ylab("Count")
+      )
     p4
   })
   
