@@ -15,6 +15,9 @@ library(DT)
 library(leaflet)
 library(ggplot2)
 library(plotly)
+library(rgdal)
+library(leaflet.extras)
+
 
 #Data Source - https://data.cityofnewyork.us/Public-Safety/NYPD-Arrests-Data-Historic-/8h9b-rp9u
 
@@ -25,6 +28,7 @@ request$status_code#Checking to ensure that a non-200 status code is not returne
 response <- content(request, as = "text", encoding = "UTF-8")
 arrest_data <- fromJSON(response) %>%  #Putting the pulled data into a data frame
   data.frame()
+
 
 #converting latitude and longitude values from characters to numeric 
 arrest_data$latitude <- as.numeric(as.character(arrest_data$latitude))
@@ -146,13 +150,20 @@ server <- function(input, output, session){
   pallete <- colorFactor(c("#3a981a","#98271a","#271a98","#98901a","#981a98"),
                          c("25-44", "18-24","45-64","65+","<18"))
   
+  #making the outline for the borough(s)
+  outline <- reactive({
+    
+    outline <- arrest_data_sample()[chull(arrest_data_sample()$longitude,
+                                          arrest_data_sample()$latitude),]
+    
+  })
+    
   
   #Server logic for leaflet map, those that won't need to change dynamically
   output$map <- renderLeaflet({
     leaflet(arrest_data) %>% addTiles() %>%
        fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude))
   })
-  
   
   #Incremental changes on the map are placed in this observer
   observe({
@@ -170,6 +181,8 @@ server <- function(input, output, session){
                        radius = 1.5, color = ~pallete(age_group)) %>%
       addLegend(position = "topright" , pal = pallete, values = ~age_group, 
                 title = "Age Group") %>%
+      addPolygons(data = outline(), lng = ~longitude, lat = ~latitude,
+                  fill = F, weight = 2, color = "#0c17eb", group = "Borough Outline") %>%
       # Layers control
       addLayersControl(
         baseGroups = c("OSM (default)", "Toner", "Watercolor","Terrain"),
