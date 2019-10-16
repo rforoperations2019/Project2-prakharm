@@ -42,15 +42,22 @@ ui <- fluidPage(
       
       #Checkbox to select boroughs
       radioButtons(inputId = "selected_borough",
-                         label = "Search by borough",
+                         label = "SEARCH BY BOROUGH",
                          choices = c("Q","K","M","S","B"),
                          selected = "M"),
       
-      selectInput(inputId = "selected_race",
-                         label = "Search by race",
+      checkboxGroupInput(inputId = "selected_race",
+                         label = "SEARCH BY RACE",
                          choices = c("BLACK","ASIAN / PACIFIC ISLANDER", "WHITE", 
                                      "WHITE HISPANIC", "BLACK HISPANIC", 
-                                     "AMERICAN INDIAN/ALASKAN NATIVE"))
+                                     "AMERICAN INDIAN/ALASKAN NATIVE"),
+                         selected = "BLACK"),
+      
+      #Selecting the size of the sample
+      numericInput(inputId = "n_samp", 
+                   label = "Sample size:", 
+                   min = 1, max = nrow(arrest_data), 
+                   value = 1000)
     ),
   
   mainPanel(
@@ -83,16 +90,22 @@ server <- function(input, output, session){
     )
   })
   
+  # A new dataframe that subsets the sample based on the size requested
+  arrest_data_sample <- reactive({ 
+    req(input$n_samp) 
+    sample_n(arrest_data_subset(), input$n_samp)
+  })
+  
   #Rendering the data table
   output$DataTable <- DT::renderDataTable(
-    DT::datatable(data = arrest_data_subset(), 
+    DT::datatable(data = arrest_data_sample(), 
                   options = list(pageLength = 10), 
                   rownames = FALSE)
   )
   
   #Server logic for donut chart
   output$donut <- renderPlotly({
-    p <- arrest_data_subset() %>%
+    p <- arrest_data_sample() %>%
       group_by(age_group) %>%
       summarize(count = n()) %>%
       plot_ly(labels = ~age_group, values = ~count) %>%
@@ -106,7 +119,7 @@ server <- function(input, output, session){
   #Convert to PLOTLY
   output$barchart <- renderPlotly({
     ggplotly(
-      p4 <- arrest_data_subset() %>%
+      p4 <- arrest_data_sample() %>%
       group_by(age_group, perp_sex) %>%
       summarize(count = n()) %>% 
       ggplot(aes(x = age_group, y= count, fill = perp_sex)) + 
