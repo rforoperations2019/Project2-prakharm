@@ -70,8 +70,8 @@ ui <- fluidPage(
       
       tabPanel("Data Table", br(), br(), uiOutput(outputId = "n"),br(), br(),DT::dataTableOutput("DataTable")),
       tabPanel("Donut Chart",br(), br(), plotlyOutput(outputId = "donut")),
-      tabPanel("Barchart", br(), br(), plotlyOutput(outputId = "barchart"))
-      #tabPanel("Map", br(), br(), br(), leafletOutput("map", height = "100%", width = "100%"))
+      tabPanel("Barchart", br(), br(), plotlyOutput(outputId = "barchart")),
+      tabPanel("Map", br(), br(), br(), leafletOutput("map"))
     )
    )
   ) 
@@ -140,6 +140,40 @@ server <- function(input, output, session){
       write.csv(arrest_data_sample(), file, row.names = TRUE)
     }
   )
+  
+
+  #designing a custom palette
+  pallete <- colorFactor(c("#3a981a","#98271a","#271a98","#98901a","#981a98"),
+                         c("25-44", "18-24","45-64","65+","<18"))
+  
+  
+  #Server logic for leaflet map, those that won't need to change dynamically
+  output$map <- renderLeaflet({
+    leaflet(arrest_data) %>% addTiles() %>%
+       fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude))
+  })
+  
+  #Incremental changes on the map are placed in this observer
+  observe({
+  
+    leafletProxy("map", data = arrest_data_subset()) %>%
+      clearShapes() %>%
+      # Base groups
+      addTiles(group = "OSM (default)") %>%
+      addProviderTiles(providers$Stamen.Toner, group = "Toner") %>%
+      addProviderTiles(providers$Stamen.Watercolor, group = "Watercolor") %>%
+      addProviderTiles(providers$Stamen.Terrain, group = "Terrain") %>%
+      addCircleMarkers(lng = ~longitude, lat = ~latitude,
+                       radius = 1.5, color = ~pallete(age_group)) %>%
+      addLegend(position = "topright" , pal = pallete, values = ~age_group, 
+                title = "Age Group") %>%
+      # Layers control
+      addLayersControl(
+        baseGroups = c("OSM (default)", "Toner", "Watercolor","Terrain"),
+        overlayGroups = c("Arrest Locations", "Borough Outline"),
+        options = layersControlOptions(collapsed = FALSE)
+      )
+  })
    
 }
 
