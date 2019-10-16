@@ -153,11 +153,14 @@ server <- function(input, output, session){
        fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude))
   })
   
+  
   #Incremental changes on the map are placed in this observer
   observe({
   
     leafletProxy("map", data = arrest_data_subset()) %>%
       clearShapes() %>%
+      clearMarkers()%>%
+      clearControls()%>%
       # Base groups
       addTiles(group = "OSM (default)") %>%
       addProviderTiles(providers$Stamen.Toner, group = "Toner") %>%
@@ -174,6 +177,7 @@ server <- function(input, output, session){
         options = layersControlOptions(collapsed = FALSE)
       )
   })
+  
    
 }
 
