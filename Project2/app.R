@@ -13,6 +13,7 @@ library(jsonlite)
 library(shiny)
 library(DT)
 library(leaflet)
+library(ggplot2)
 library(plotly)
 
 #Data Source - https://data.cityofnewyork.us/Public-Safety/NYPD-Arrests-Data-Historic-/8h9b-rp9u
@@ -57,7 +58,10 @@ ui <- fluidPage(
       numericInput(inputId = "n_samp", 
                    label = "Sample size:", 
                    min = 1, max = nrow(arrest_data), 
-                   value = 1000)
+                   value = 1000),
+      
+      #Download button to download the current datatable being displayed
+      downloadButton("downloadData", "Download Data")
     ),
   
   mainPanel(
@@ -116,18 +120,26 @@ server <- function(input, output, session){
   })
   
   #Server logic for barchart
-  #Convert to PLOTLY
   output$barchart <- renderPlotly({
     ggplotly(
-      p4 <- arrest_data_sample() %>%
+      p <- arrest_data_sample() %>%
       group_by(age_group, perp_sex) %>%
       summarize(count = n()) %>% 
       ggplot(aes(x = age_group, y= count, fill = perp_sex)) + 
       geom_bar(stat="identity") + xlab("Age Group") + ylab("Count")
       )
-    p4
+    p
   })
   
+  #Download csv
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste(arrest_data_sample(), Sys.Date(), '.csv', sep = '')
+    },
+    content = function(file) {
+      write.csv(arrest_data_sample(), file, row.names = TRUE)
+    }
+  )
    
 }
 
