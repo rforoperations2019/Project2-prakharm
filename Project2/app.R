@@ -29,6 +29,12 @@ response <- content(request, as = "text", encoding = "UTF-8")
 arrest_data <- fromJSON(response) %>%  #Putting the pulled data into a data frame
   data.frame()
 
+#Changing the names of the boroughs in the dataframe to make them more intuitive
+arrest_data$arrest_boro[which(arrest_data$arrest_boro == "Q")] <- "Queens"
+arrest_data$arrest_boro[which(arrest_data$arrest_boro == "M")] <- "Manhattan"
+arrest_data$arrest_boro[which(arrest_data$arrest_boro == "S")] <- "Staten Island"
+arrest_data$arrest_boro[which(arrest_data$arrest_boro == "B")] <- "The Bronx"
+arrest_data$arrest_boro[which(arrest_data$arrest_boro == "K")] <- "Brooklyn"
 
 #converting latitude and longitude values from characters to numeric 
 arrest_data$latitude <- as.numeric(as.character(arrest_data$latitude))
@@ -48,8 +54,9 @@ ui <- fluidPage(
       #Checkbox to select boroughs
       radioButtons(inputId = "selected_borough",
                          label = "SEARCH BY BOROUGH",
-                         choices = c("Q","K","M","S","B"),
-                         selected = "M"),
+                         choices = c("Queens","The Bronx","Manhattan",
+                                     "Staten Island","Brooklyn"),
+                         selected = "Manhattan"),
       
       checkboxGroupInput(inputId = "selected_race",
                          label = "SEARCH BY RACE",
@@ -93,7 +100,7 @@ server <- function(input, output, session){
   observe({
     updateNumericInput(session, 
                        inputId = "n_samp",
-                       value = min(1000, nrow(arrest_data_subset())),
+                       value = min(100, nrow(arrest_data_subset())),
                        max = nrow(arrest_data_subset())
     )
   })
@@ -178,15 +185,15 @@ server <- function(input, output, session){
       addProviderTiles(providers$Stamen.Watercolor, group = "Watercolor") %>%
       addProviderTiles(providers$Stamen.Terrain, group = "Terrain") %>%
       addCircleMarkers(lng = ~longitude, lat = ~latitude,
-                       radius = 1.5, color = ~pallete(age_group)) %>%
+                       radius = 1.5, color = ~pallete(age_group), group = "Arrest Locations") %>%
       addLegend(position = "topright" , pal = pallete, values = ~age_group, 
                 title = "Age Group") %>%
       addPolygons(data = outline(), lng = ~longitude, lat = ~latitude,
-                  fill = F, weight = 2, color = "#0c17eb", group = "Borough Outline") %>%
+                  fill = F, weight = 2, color = "#0c17eb", group = "Precinct Jurisdiction") %>%
       # Layers control
       addLayersControl(
         baseGroups = c("OSM (default)", "Toner", "Watercolor","Terrain"),
-        overlayGroups = c("Arrest Locations", "Borough Outline"),
+        overlayGroups = c("Arrest Locations", "Precinct Jurisdiction"),
         options = layersControlOptions(collapsed = FALSE)
       )
   })
