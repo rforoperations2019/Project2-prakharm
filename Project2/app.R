@@ -44,7 +44,7 @@ arrest_data$longitude <- as.numeric(as.character(arrest_data$longitude))
 
 ui <- fluidPage(
   
-  theme = shinytheme("yeti"),
+  theme = shinytheme("spacelab"),
   
   #Title
   titlePanel("NYC Arrest Data"),
@@ -83,9 +83,9 @@ ui <- fluidPage(
     tabsetPanel(
       
       tabPanel("Data Table", br(), br(), uiOutput(outputId = "n"),br(), br(),DT::dataTableOutput("DataTable")),
-      tabPanel("Donut Chart",br(), br(), plotlyOutput(outputId = "donut")),
-      tabPanel("Barchart", br(), br(), plotlyOutput(outputId = "barchart")),
-      tabPanel("Map", br(), br(), br(), leafletOutput("map"))
+      tabPanel("Donut Chart",br(), br(), plotlyOutput(outputId = "donut",height = 550)),
+      tabPanel("Barchart", br(), br(), plotlyOutput(outputId = "barchart", height = 550)),
+      tabPanel("Map", br(), br(), br(), leafletOutput("map",height = 650))
     )
    )
   ) 
@@ -140,7 +140,7 @@ server <- function(input, output, session){
       summarize(count = n()) %>%
       plot_ly(labels = ~age_group, values = ~count) %>%
       add_pie(hole = 0.6) %>%
-      layout(title = "Distrubution of perpetrators by age group",  showlegend = T,
+      layout(title = "Distrubution Of Perpetrators By Age Group",  showlegend = T,
              xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
              yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
   })
@@ -152,7 +152,8 @@ server <- function(input, output, session){
       group_by(age_group, perp_sex) %>%
       summarize(count = n()) %>% 
       ggplot(aes(x = age_group, y= count, fill = perp_sex)) + 
-      geom_bar(stat="identity") + xlab("Age Group") + ylab("Count")
+      geom_bar(stat="identity") + xlab("Age Group") + ylab("Count") +
+      ggtitle("What was the gender and age distribution of the perpetrators?")
       )
     p
   })
