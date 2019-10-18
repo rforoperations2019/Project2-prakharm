@@ -17,6 +17,7 @@ library(ggplot2)
 library(plotly)
 library(rgdal)
 library(leaflet.extras)
+library(shinythemes)
 
 
 #Data Source - https://data.cityofnewyork.us/Public-Safety/NYPD-Arrests-Data-Historic-/8h9b-rp9u
@@ -42,6 +43,8 @@ arrest_data$longitude <- as.numeric(as.character(arrest_data$longitude))
 
 
 ui <- fluidPage(
+  
+  theme = shinytheme("yeti"),
   
   #Title
   titlePanel("NYC Arrest Data"),
@@ -115,8 +118,20 @@ server <- function(input, output, session){
   output$DataTable <- DT::renderDataTable(
     DT::datatable(data = arrest_data_sample(), 
                   options = list(pageLength = 10), 
-                  rownames = FALSE)
+                  rownames = FALSE) %>%
+      formatStyle('pd_desc',  color = 'red', 
+                  backgroundColor = 'orange', fontWeight = 'bold') %>%
+      formatStyle('ofns_desc',  color = 'white', 
+                  backgroundColor = 'black', fontWeight = 'bold') %>%
+      formatStyle(
+        'arrest_boro',
+        transform = 'rotateX(45deg) rotateY(20deg) rotateZ(30deg)',
+        backgroundColor = styleEqual(
+          unique(arrest_data$arrest_boro), c('lightblue', 'lightgreen', 
+                                             'lightpink','red','orange')
+        )
   )
+)  
   
   #Server logic for donut chart
   output$donut <- renderPlotly({
@@ -180,7 +195,6 @@ server <- function(input, output, session){
       clearMarkers()%>%
       clearControls()%>%
       # Base groups
-      addTiles(group = "OSM (default)") %>%
       addProviderTiles(providers$Stamen.Toner, group = "Toner") %>%
       addProviderTiles(providers$Stamen.Watercolor, group = "Watercolor") %>%
       addProviderTiles(providers$Stamen.Terrain, group = "Terrain") %>%
@@ -192,7 +206,7 @@ server <- function(input, output, session){
                   fill = F, weight = 2, color = "#0c17eb", group = "Precinct Jurisdiction") %>%
       # Layers control
       addLayersControl(
-        baseGroups = c("OSM (default)", "Toner", "Watercolor","Terrain"),
+        baseGroups = c("Toner", "Watercolor","Terrain"),
         overlayGroups = c("Arrest Locations", "Precinct Jurisdiction"),
         options = layersControlOptions(collapsed = FALSE)
       )
